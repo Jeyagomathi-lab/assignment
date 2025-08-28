@@ -14,6 +14,12 @@ jobs:
           run: docker build -t fastapi-app .
         - name: run test inside container
           run: docker run --rm fastapi-app pytest -v
+        - name: scan with sbom using syft
+          uses: anchore/sbom-action@v0
+          with:
+            image: fastapi-app:latest
+            format: spdx-json
+            output-file: sbom.json
 
 
 
