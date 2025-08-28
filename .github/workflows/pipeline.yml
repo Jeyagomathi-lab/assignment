@@ -18,6 +18,7 @@ jobs:
         - name: run test inside container
           run: docker run --rm fastapi-app pytest -v
 
+          
         - name: scan with sbom using syft
           uses: anchore/sbom-action@v0
           with:
