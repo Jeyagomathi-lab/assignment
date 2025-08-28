@@ -46,14 +46,12 @@ jobs:
         - name: Push image to ECR
           run: |
             docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
-
-        - name: Restore Cosign private key
-          run: |
-            echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
-            
         - name: Sign Docker image with Cosign
-          env:
-            COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           run: |
+            COSIGN_PASSWORD=${{ secrets.COSIGN_PASSWORD }} \
             cosign sign --key cosign.key \
+              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
+        - name: Verify signature
+          run: |
+            cosign verify --key cosign.key.pub \
               ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
