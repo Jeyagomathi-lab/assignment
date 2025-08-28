@@ -64,12 +64,11 @@ jobs:
             COSIGN_PASSWORD=${{ secrets.COSIGN_PASSWORD }} \
             cosign sign --key cosign.key \
               ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
-        
         - name: Verify Docker image signature
           run: |
             cosign verify --key cosign.pub \
-              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest > verify.txt
-            
+              --offline \
+              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest > verify.
         - name: Save artifacts
           uses: actions/upload-artifact@v4
           with:
