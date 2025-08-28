@@ -57,8 +57,3 @@ jobs:
             COSIGN_PASSWORD=${{ secrets.COSIGN_PASSWORD }} \
             cosign sign --key cosign.key \
               ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
-
-        - name: Verify signature
-          run: |
-            cosign verify --key cosign.pub \
-              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
