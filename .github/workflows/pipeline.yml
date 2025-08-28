@@ -64,6 +64,20 @@ jobs:
             COSIGN_PASSWORD=${{ secrets.COSIGN_PASSWORD }} \
             cosign sign --key cosign.key \
               ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
+
+
+
+        - name: Prepare Cosign private keys
+          run: |
+            echo "${{ secrets.COSIGN_PRIVATE_KEY }}" | tr -d '\r' > cosign.key
+            chmod 600 cosign.key
+      
+
+        - name: Prepare Cosign pub keys
+          run: |
+            echo "${{ secrets.COSIGN_PUBLIC_KEY }}" | tr -d '\r' > cosign.pub
+            chmod 600 cosign.pub
+
         - name: Verify Docker image signature
           run: |
             cosign verify --key cosign.pub \
