@@ -59,15 +59,26 @@ jobs:
             printf "%s" "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
             printf "%s" "${{ secrets.COSIGN_PUBLIC_KEY }}" > cosign.pub
             chmod 600 cosign.key cosign.pub
+
+        - name: Get ECR image digest
+          id: digest
+          run: |
+            DIGEST=$(aws ecr describe-images \
+              --repository-name fastapi-app \
+              --image-ids imageTag=latest \
+              --query 'imageDetails[0].imageDigest' \
+              --output text)
+            echo "DIGEST=$DIGEST" >> $GITHUB_ENV
                 
         - name: Sign Docker image with Cosign
           run: |
             COSIGN_PASSWORD=${{ secrets.COSIGN_PASSWORD }} \
-            cosign sign --key cosign.key \
-              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
+            COSIGN_EXPERIMENTAL=1 \
+            cosign sign --key cosign.key --no-upload \
+              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${DIGEST}
                 
         - name: Verify Docker image signature
           run: |
-            cosign verify --key cosign.pub \
-              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest \
+            cosign verify --key cosign.pub --offline \
+              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${DIGEST} \
               > verify.txt
