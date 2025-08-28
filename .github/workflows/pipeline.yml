@@ -49,8 +49,8 @@ jobs:
 
         - name: Prepare Cosign keys
           run: |
-            echo "${{ secrets.COSIGN_KEY }}" > cosign.key
-            echo "${{ secrets.COSIGN_PUB }}" > cosign.pub
+            echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
+            echo "${{ secrets.COSIGN_PUBLIC_KEY }}" > cosign.pub
         
         - name: Sign Docker image with Cosign
           run: |
