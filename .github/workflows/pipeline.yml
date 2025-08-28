@@ -69,14 +69,14 @@ jobs:
               --query 'imageDetails[0].imageDigest' \
               --output text)
             echo "DIGEST=$DIGEST" >> $GITHUB_ENV
-                
+
         - name: Sign Docker image with Cosign
           run: |
             COSIGN_PASSWORD=${{ secrets.COSIGN_PASSWORD }} \
             COSIGN_EXPERIMENTAL=1 \
-            cosign sign --key cosign.key --no-upload \
+            cosign sign --key cosign.key \
               ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${DIGEST}
-                
+
         - name: Verify Docker image signature
           run: |
             cosign verify --key cosign.pub --offline \
