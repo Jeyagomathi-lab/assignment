@@ -46,6 +46,12 @@ jobs:
         - name: Push image to ECR
           run: |
             docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
+
+        - name: Prepare Cosign keys
+          run: |
+            echo "${{ secrets.COSIGN_KEY }}" > cosign.key
+            echo "${{ secrets.COSIGN_PUB }}" > cosign.pub
+        
         - name: Sign Docker image with Cosign
           run: |
             COSIGN_PASSWORD=${{ secrets.COSIGN_PASSWORD }} \
