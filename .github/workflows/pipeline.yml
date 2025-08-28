@@ -1,0 +1,19 @@
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-test-app:
+    runs-on: ubuntu-latest
+    steps:
+        - name: checkout code
+          uses: actions/checkout@v3
+        - name: setup docker build
+          uses: docker/setup-buildx-action@v2
+        - name: build docker image
+          run: docker build -t fastapi-app ./app
+        - name: run test inside container
+          run: docker run --rm fastapi-app pytest -v
+
+
+
