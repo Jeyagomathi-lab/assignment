@@ -53,32 +53,21 @@ jobs:
         - name: Push image to ECR
           run: |
             docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
+
         - name: Prepare Cosign keys
           run: |
-            echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
-            echo "${{ secrets.COSIGN_PUBLIC_KEY }}" > cosign.pub
-            # Fix any Windows-style line endings
-            sed -i 's/\r$//' cosign.key
-            sed -i 's/\r$//' cosign.pub
+            printf "%s" "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
+            printf "%s" "${{ secrets.COSIGN_PUBLIC_KEY }}" > cosign.pub
             chmod 600 cosign.key cosign.pub
-        
+                
         - name: Sign Docker image with Cosign
           run: |
             COSIGN_PASSWORD=${{ secrets.COSIGN_PASSWORD }} \
             cosign sign --key cosign.key \
               ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
-
-
-
+                
         - name: Verify Docker image signature
           run: |
             cosign verify --key cosign.pub \
-              --offline \
-              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest > verify.
-        - name: Save artifacts
-          uses: actions/upload-artifact@v4
-          with:
-            name: build-artifacts
-            path: |
-              sbom.json
-              verify.txt
+              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest \
+              > verify.txt
