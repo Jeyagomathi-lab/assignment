@@ -79,6 +79,6 @@ jobs:
 
         - name: Verify Docker image signature
           run: |
-            cosign verify --key cosign.pub --offline \
+            cosign verify --key cosign.pub \
               ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${DIGEST} \
               > verify.txt
