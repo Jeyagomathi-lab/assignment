@@ -71,7 +71,8 @@ jobs:
           echo "DIGEST=$DIGEST" >> $GITHUB_ENV
 
       - name: Debug digest
-        run: echo "Using image digest: ${{ env.DIGEST }}"
+        run: |
+          echo "Using image digest: $DIGEST"
 
       - name: Sign Docker image with Cosign
         run: |
