@@ -77,12 +77,12 @@ jobs:
       - name: Sign Docker image with Cosign (no Rekor upload)
         run: |
           COSIGN_PASSWORD=${{ secrets.COSIGN_PASSWORD }} \
-          cosign sign --key cosign.key --no-upload \
+          cosign sign --key cosign.key --rekor-url none \
             ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${DIGEST}
-
+              
       - name: Verify Docker image signature (offline)
         run: |
-          cosign verify --key cosign.pub --offline \
+          cosign verify --key cosign.pub --rekor-url none \
             ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${DIGEST} \
             > verify.txt
           cat verify.txt
