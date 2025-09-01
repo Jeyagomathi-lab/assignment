@@ -6,79 +6,82 @@ jobs:
   build-test-app:
     runs-on: ubuntu-latest
     steps:
-        - name: checkout code
-          uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-        - name: setup docker build
-          uses: docker/setup-buildx-action@v2
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-        - name: build docker image
-          run: docker build -t fastapi-app .
+      - name: Build Docker image
+        run: docker build -t fastapi-app:latest .
 
-        - name: run test inside container
-          run: docker run --rm fastapi-app pytest -v
-   
-        - name: scan with sbom using syft
-          uses: anchore/sbom-action@v0
-          with:
-            image: fastapi-app:latest
-            format: spdx-json
-            output-file: sbom.json
+      - name: Run tests inside container
+        run: docker run --rm fastapi-app:latest pytest -v
 
-        - name: Scan for vulnerabilities with Grype
-          uses: anchore/scan-action@v3
-          with:
-            image: fastapi-app:latest
-            fail-build: true
-            severity-cutoff: critical
+      - name: Scan with SBOM using Syft
+        uses: anchore/sbom-action@v0
+        with:
+          image: fastapi-app:latest
+          format: spdx-json
+          output-file: sbom.json
 
-        - name: install cosign for signed image process
-          uses: sigstore/cosign-installer@v3
+      - name: Scan for vulnerabilities with Grype
+        uses: anchore/scan-action@v3
+        with:
+          image: fastapi-app:latest
+          fail-build: true
+          severity-cutoff: critical
 
-        - name: Configure AWS credentials
-          uses: aws-actions/configure-aws-credentials@v4
-          with:
-            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws-region: ap-south-1
-        
-        - name: Login to Amazon ECR
-          id: login-ecr
-          uses: aws-actions/amazon-ecr-login@v2
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
 
-        - name: Tag image for ECR
-          run: |
-            docker tag fastapi-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
 
-        - name: Push image to ECR
-          run: |
-            docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-        - name: Prepare Cosign keys
-          run: |
-            printf "%s" "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
-            printf "%s" "${{ secrets.COSIGN_PUBLIC_KEY }}" > cosign.pub
-            chmod 600 cosign.key cosign.pub
+      - name: Tag image for ECR
+        run: |
+          docker tag fastapi-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
 
-        - name: Get ECR image digest
-          id: digest
-          run: |
-            DIGEST=$(aws ecr describe-images \
-              --repository-name fastapi-app \
-              --image-ids imageTag=latest \
-              --query 'imageDetails[0].imageDigest' \
-              --output text)
-            echo "DIGEST=$DIGEST" >> $GITHUB_ENV
+      - name: Push image to ECR
+        run: |
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
 
-        - name: Sign Docker image with Cosign
-          run: |
-           COSIGN_PASSWORD=${{ secrets.COSIGN_PASSWORD }} \
-           cosign sign --key cosign.key \
-             ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${DIGEST}
+      - name: Prepare Cosign keys
+        run: |
+          printf "%s" "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
+          printf "%s" "${{ secrets.COSIGN_PUBLIC_KEY }}" > cosign.pub
+          chmod 600 cosign.key cosign.pub
 
+      - name: Get ECR image digest
+        id: digest
+        run: |
+          DIGEST=$(aws ecr describe-images \
+            --repository-name fastapi-app \
+            --image-ids imageTag=latest \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)
+          echo "DIGEST=$DIGEST" >> $GITHUB_ENV
 
-        - name: Verify Docker image signature
-          run: |
-            cosign verify --key cosign.pub \
-              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${DIGEST} \
-              > verify.txt
+      - name: Debug digest
+        run: echo "Using image digest: ${{ env.DIGEST }}"
+
+      - name: Sign Docker image with Cosign
+        run: |
+          COSIGN_PASSWORD=${{ secrets.COSIGN_PASSWORD }} \
+          cosign sign --key cosign.key \
+            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${{ env.DIGEST }}
+
+      - name: Verify Docker image signature
+        run: |
+          cosign verify --key cosign.pub \
+            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${{ env.DIGEST }} \
+            > verify.txt
+          cat verify.txt
