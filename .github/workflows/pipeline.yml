@@ -74,15 +74,15 @@ jobs:
         run: |
           echo "Using image digest: $DIGEST"
 
-      - name: Sign Docker image with Cosign
+      - name: Sign Docker image with Cosign (no Rekor upload)
         run: |
           COSIGN_PASSWORD=${{ secrets.COSIGN_PASSWORD }} \
-          cosign sign --key cosign.key \
-            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${{ env.DIGEST }}
+          cosign sign --key cosign.key --no-upload \
+            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${DIGEST}
 
-      - name: Verify Docker image signature
+      - name: Verify Docker image signature (offline)
         run: |
-          cosign verify --key cosign.pub \
-            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${{ env.DIGEST }} \
+          cosign verify --key cosign.pub --offline \
+            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app@${DIGEST} \
             > verify.txt
           cat verify.txt
